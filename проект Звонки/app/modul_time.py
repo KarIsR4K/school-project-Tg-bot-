@@ -1,61 +1,50 @@
-from datetime import datetime as dt
+from datetime import datetime, time
 
+SCHEDULE = [
+    {"start": time(8, 30), "end": time(9, 15)},  # 1 урок
+    {"start": time(9, 25), "end": time(10, 10)}, # 2 урок
+    {"start": time(10, 25), "end": time(11, 10)},# 3 урок
+    {"start": time(11, 25), "end": time(12, 10)},# 4 урок
+    {"start": time(12, 30), "end": time(13, 15)},# 5 урок
+    {"start": time(13, 35), "end": time(14, 20)},# 6 урок
+    {"start": time(14, 40), "end": time(15, 25)},# 7 урок
+    # Дополнительные уроки...
+]
 
-def Les_time():
-    second_now = dt.now().hour * 3600 + dt.now().minute * 60 + dt.now().second
-
-    courrt1 = (30600,
-               33300,
-               33900,
-               36600,
-               37500,
-               40200,
-               41100,
-               43800,
-               45000,
-               47700,
-               48900,
-               51600,
-               117000)
-
-    for i in range(len(courrt1) - 1):
-        if second_now > courrt1[i - 2] or second_now < 2 * 3600:
-            return "Уроки кончились"
-        elif second_now > courrt1[i] and second_now < courrt1[i + 1]:
-            secs = (courrt1[i + 1] - second_now)
-            hours = (secs // 3600)
-            minutes = ((secs - hours * 3600) // 60)
-            second = ((secs - 3600 * 3600) % 60)
-            full_time = (hours, minutes, second, i)
-
-            return full_time
-
-
-def make_text_for_time():
-    full_time = Les_time()
-    if full_time == 'Уроки кончились':
-        return 'Уроки кончились'
-    if full_time[3] % 2 == 0:
-        prefix = 'До звонка на урок осталось'
+def get_number_declension(number, one, few, many):
+    """Возвращает правильную форму слова в зависимости от числа."""
+    if number % 10 == 1 and number % 100 != 11:
+        return one
+    elif number % 10 in [2, 3, 4] and number % 100 not in [12, 13, 14]:
+        return few
     else:
-        prefix = 'До звонка с урока осталось'
-    if full_time[1] == 1:
-        trin = 'Час'
-    elif full_time[1] <= 4:
-        trin = 'Часа'
-    elif full_time[1] <= 12:
-        trin = 'Часов'
-    if full_time[2] % 10 == 1 and full_time[2] % 100 != 11:
-        minut = 'Минута'
-    elif 2 <= full_time[2] % 10 <= 4 and (full_time[2] % 100 < 10 or full_time[2] % 100 >= 20):
-        minut = 'Минуты'
-    else:
-        minut = 'Минут'
-    if full_time[2] % 10 == 1 and full_time[2] % 100 != 11:
-        seconds = 'Секунда'
-    elif 2 <= full_time[2] % 10 <= 4 and (full_time[2] % 100 < 10 or full_time[2] % 100 >= 20):
-        seconds = 'Секунды'
-    else:
-        seconds = 'Секунд'
-    return f'{prefix} {full_time[0]} {trin} {full_time[1]} {minut} {full_time[2]} {seconds}'
+        return many
 
+def get_lesson_time():
+    now = datetime.now().time()
+    for i, lesson in enumerate(SCHEDULE, 1):
+        start = lesson["start"]
+        end = lesson["end"]
+        if start <= now <= end:
+            # Время до конца урока
+            remaining_seconds = (datetime.combine(datetime.today(), end) - 
+                                datetime.combine(datetime.today(), now)).seconds
+            minutes = remaining_seconds // 60
+            seconds = remaining_seconds % 60
+            minute_word = get_number_declension(minutes, "минута", "минуты", "минут")
+            second_word = get_number_declension(seconds, "секунда", "секунды", "секунд")
+            if minutes == 0:
+                return f"До конца {i}-го урока осталось {seconds} {second_word}."
+            return f"До конца {i}-го урока осталось {minutes} {minute_word} {seconds} {second_word}."
+        elif now < start:
+            # Время до начала урока
+            remaining_seconds = (datetime.combine(datetime.today(), start) - 
+                                datetime.combine(datetime.today(), now)).seconds
+            minutes = remaining_seconds // 60
+            seconds = remaining_seconds % 60
+            minute_word = get_number_declension(minutes, "минута", "минуты", "минут")
+            second_word = get_number_declension(seconds, "секунда", "секунды", "секунд")
+            if minutes == 0:
+                return f"До начала {i}-го урока осталось {seconds} {second_word}."
+            return f"До начала {i}-го урока осталось {minutes} {minute_word} {seconds} {second_word}."
+    return "Уроки закончились или ещё не начались."
